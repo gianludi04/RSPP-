@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { COLORS } from '@/constants/colors';
 import { ChevronLeft, ChevronRight, Plus, FileText, Users, Clock, MapPin } from 'lucide-react-native';
 import Header from '@/components/common/Header';
@@ -81,6 +81,36 @@ export default function CalendarScreen() {
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedDate, setSelectedDate] = useState(now);
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [calendarData, setCalendarData] = useState<any>(null); // Example, adjust as needed
+
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1200)); // Simulate 1.2 second delay
+
+        // Simulate success/failure randomly
+        if (Math.random() < 0.15) { // 15% chance of error
+          throw new Error("Failed to load calendar data. Please try again.");
+        }
+        
+        setCalendarData({ eventsMock: events }); // Example data, using existing mock events
+        setIsLoading(false);
+      } catch (e: any) {
+        setError(e.message || "An unexpected error occurred.");
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []); // Empty dependency array to run once on mount
+
   const calendarDays = generateCalendarDays(selectedYear, selectedMonth);
   const weekDays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
   const monthNames = [
@@ -138,6 +168,24 @@ export default function CalendarScreen() {
         return <FileText size={16} color={COLORS.warning} />;
     }
   };
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ marginTop: 10, color: COLORS.textSecondary, fontFamily: 'Inter-Regular' }}>Loading Calendar...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: COLORS.background }}>
+        <Text style={{ color: COLORS.danger, fontSize: 16, textAlign: 'center', fontFamily: 'Inter-Medium' }}>{error}</Text>
+        {/* Optional: Add a retry button */}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

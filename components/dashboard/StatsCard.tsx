@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Dimensions } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { COLORS } from '@/constants/colors';
 import Card from '@/components/common/Card';
 
@@ -41,11 +41,11 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 8, // Adds space between items
   },
   statItem: {
+    flex: 1, // Allows items to share space equally
     alignItems: 'center',
-    width: (Dimensions.get('window').width - 64) / 4,
   },
   statValue: {
     width: 56,
