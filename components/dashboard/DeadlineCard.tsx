@@ -23,15 +23,50 @@ export default function DeadlineCard({ items, onViewAll }: DeadlineCardProps) {
     return date.toLocaleDateString('it-IT', options);
   };
 
-  const daysUntil = (date: Date) => {
-    const today = new Date();
-    const diffTime = date.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
+  // daysUntil function moved outside, modified for testability, and exported below
 
   const getStatusColor = (date: Date, isUrgent: boolean) => {
     const days = daysUntil(date);
+    if (days < 0) return COLORS.danger;
+    if (isUrgent || days <= 7) return COLORS.warning;
+    if (days <= 30) return COLORS.info;
+    return COLORS.success;
+  };
+
+// Moved daysUntil outside the component, made it exportable and testable.
+// Added currentDate parameter and date normalization.
+export const daysUntil = (date: Date, currentDate: Date = new Date()): number => {
+  const currentNormalized = new Date(currentDate);
+  currentNormalized.setHours(0, 0, 0, 0); // Normalize current date to the beginning of the day
+
+  const targetNormalized = new Date(date);
+  targetNormalized.setHours(0, 0, 0, 0); // Normalize target date to the beginning of the day
+
+  const diffTime = targetNormalized.getTime() - currentNormalized.getTime();
+  // Use Math.round for days difference to be more precise around midnight
+  // or Math.ceil if the intention is "any part of a day counts as a full day forward"
+  // The original used Math.ceil. Let's stick to it for now but be mindful.
+  // For "days until", if it's 0.5 days away, it's "1 day until" (tomorrow).
+  // If it's -0.5 days ago, it's "0 days until" if we ceil (meaning today, or already passed today).
+  // Let's re-evaluate ceil for past dates.
+  // If target is 2024-04-10 and current is 2024-04-11 (target is yesterday)
+  // diffTime = -24 * 3600 * 1000. diffDays = ceil(-1) = -1. This is correct.
+  // If target is 2024-04-10 23:00 and current is 2024-04-10 01:00 (both normalized to 2024-04-10 00:00)
+  // diffTime = 0. diffDays = ceil(0) = 0. This is correct.
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
+export default function DeadlineCard({ items, onViewAll }: DeadlineCardProps) {
+  const formatDate = (date: Date) => {
+    const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+    return date.toLocaleDateString('it-IT', options);
+  };
+
+  // getStatusColor now uses the exported daysUntil, passing the item's date.
+  // It will use the real 'new Date()' for currentDate by default.
+  const getStatusColor = (date: Date, isUrgent: boolean) => {
+    const days = daysUntil(date); // daysUntil will use its default new Date() for current time
     if (days < 0) return COLORS.danger;
     if (isUrgent || days <= 7) return COLORS.warning;
     if (days <= 30) return COLORS.info;
@@ -51,8 +86,14 @@ export default function DeadlineCard({ items, onViewAll }: DeadlineCardProps) {
       {items.length === 0 ? (
         <Text style={styles.emptyText}>Nessuna scadenza imminente</Text>
       ) : (
-        items.map((item) => (
-          <View key={item.id} style={styles.deadlineItem}>
+        items.map((item, index) => (
+          <View 
+            key={item.id} 
+            style={[
+              styles.deadlineItemBase, 
+              index < items.length - 1 && styles.deadlineItemBorder
+            ]}
+          >
             <View style={[styles.indicator, { backgroundColor: getStatusColor(item.date, item.isUrgent) }]} />
             <View style={styles.deadlineContent}>
               <Text style={styles.deadlineTitle}>{item.title}</Text>
@@ -101,10 +142,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 16,
   },
-  deadlineItem: {
+  deadlineItemBase: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
+  },
+  deadlineItemBorder: {
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
   },

@@ -66,8 +66,14 @@ export default function ActivityList({ activities, onViewAll }: ActivityListProp
       {activities.length === 0 ? (
         <Text style={styles.emptyText}>Nessuna attività recente</Text>
       ) : (
-        activities.map((activity) => (
-          <View key={activity.id} style={styles.activityItem}>
+        activities.map((activity, index) => (
+          <View 
+            key={activity.id} 
+            style={[
+              styles.activityItemBase, 
+              index < activities.length - 1 && styles.activityItemBorder
+            ]}
+          >
             <View style={styles.activityHeader}>
               <Text style={styles.activityTitle}>{activity.title}</Text>
               <View style={[styles.statusBadge, { backgroundColor: getStatusColor(activity.status) }]}>
@@ -116,8 +122,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 16,
   },
-  activityItem: {
+  activityItemBase: {
     paddingVertical: 12,
+  },
+  activityItemBorder: {
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
   },

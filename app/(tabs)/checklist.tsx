@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { COLORS } from '@/constants/colors';
 import { Plus, Filter, CircleCheck as CheckCircle, CircleCheck as CheckCircle2, Circle } from 'lucide-react-native';
 import Header from '@/components/common/Header';
@@ -59,6 +59,35 @@ const checklistTemplates = [
 
 export default function ChecklistScreen() {
   const [activeTab, setActiveTab] = useState('current');
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [checklistData, setChecklistData] = useState<any>(null); // Example, adjust as needed
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate 1 second delay
+
+        // Simulate success/failure randomly
+        if (Math.random() < 0.1) { // 10% chance of error
+          throw new Error("Failed to load checklist. Please try again.");
+        }
+        
+        setChecklistData({ items: checklists, templates: checklistTemplates }); // Example data
+        setIsLoading(false);
+      } catch (e: any) {
+        setError(e.message || "An unexpected error occurred.");
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
   
   const formatDate = (date: Date) => {
     const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
@@ -101,6 +130,24 @@ export default function ChecklistScreen() {
       <Text style={styles.templateInfo}>{item.items} elementi</Text>
     </TouchableOpacity>
   );
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ marginTop: 10, color: COLORS.textSecondary, fontFamily: 'Inter-Regular' }}>Loading Checklist...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: COLORS.background }}>
+        <Text style={{ color: COLORS.danger, fontSize: 16, textAlign: 'center', fontFamily: 'Inter-Medium' }}>{error}</Text>
+        {/* Optional: Add a retry button */}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

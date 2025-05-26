@@ -24,9 +24,9 @@ export default function NotificationCard({
   onViewAll,
   onNotificationPress 
 }: NotificationCardProps) {
-  const formatDate = (date: Date) => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+  // formatDate function moved outside the component and exported below
+
+  const getNotificationIcon = (type: Notification['type']) => {
     const diffMins = Math.round(diffMs / 60000);
     const diffHours = Math.round(diffMs / 3600000);
     const diffDays = Math.round(diffMs / 86400000);
@@ -45,6 +45,33 @@ export default function NotificationCard({
     }
   };
 
+// Moved formatDate outside the component to make it exportable and testable.
+export const formatDate = (date: Date): string => {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.round(diffMs / 60000);
+  const diffHours = Math.round(diffMs / 3600000);
+  const diffDays = Math.round(diffMs / 86400000);
+  
+  if (diffMins < 60) {
+    return `${diffMins} min fa`;
+  } else if (diffHours < 24) {
+    return `${diffHours} ore fa`;
+  } else if (diffDays === 1) {
+    return 'Ieri';
+  } else if (diffDays < 7) {
+    return `${diffDays} giorni fa`;
+  } else {
+    const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit' };
+    return date.toLocaleDateString('it-IT', options);
+  }
+};
+
+export default function NotificationCard({ 
+  notifications, 
+  onViewAll,
+  onNotificationPress 
+}: NotificationCardProps) {
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
       case 'warning':
@@ -58,6 +85,7 @@ export default function NotificationCard({
     }
   };
 
+  // Original component return statement starts here
   return (
     <Card>
       <View style={styles.header}>
@@ -71,12 +99,13 @@ export default function NotificationCard({
       {notifications.length === 0 ? (
         <Text style={styles.emptyText}>Nessuna notifica</Text>
       ) : (
-        notifications.map((notification) => (
+        notifications.map((notification, index) => (
           <TouchableOpacity
             key={notification.id}
             style={[
-              styles.notificationItem,
-              !notification.isRead && styles.unreadNotification
+              styles.notificationItemBase,
+              !notification.isRead && styles.unreadNotification,
+              index < notifications.length - 1 && styles.notificationItemBorder
             ]}
             onPress={() => onNotificationPress(notification.id)}
           >
@@ -127,9 +156,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 16,
   },
-  notificationItem: {
+  notificationItemBase: {
     flexDirection: 'row',
     paddingVertical: 12,
+  },
+  notificationItemBorder: {
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
   },
